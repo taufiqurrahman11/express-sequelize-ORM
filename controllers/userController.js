@@ -15,6 +15,15 @@ exports.createUser = async (req, res) => {
             return res.status(400).json({ status: 'Validation Failed', message: error.details[0].message });
         }
 
+        const existingUser = await User.findOne({
+            where: {
+                email: email
+            }
+        });
+        if (existingUser) {
+            return handleClientError(res, 400, 'Email already exists')
+        }
+
         const newUser = await User.create({
             name,
             email
@@ -47,18 +56,66 @@ exports.getUserById = async (req, res) => {
         return res.status(404).json({ message: 'User not found' });
       }
   
-      res.status(200).json({ data: user });
+      res.status(200).json({ data: user, message: 'Success get user by id'});
     } catch (error) {
       return handleServerError(res);
     }
 };
 
+exports.getAllUsers = async (req, res) => {
+    try {
+        const allUsers = await User.findAll({
+            include: {
+                model: Cart,
+                as: 'productInCart',
+                attributes: {
+                    exclude: ['createdAt', 'updatedAt']
+                }
+            },
+            attributes: {
+                exclude: ['updatedAt', 'createdAt']
+            }
+        })
+
+        res.status(200).json({ data: allUsers, message: 'Successfully get all users'})
+    } catch (error) {
+        return handleServerError(res)
+    }
+}
+
+exports.deleteUser = async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        const user = await User.findByPk(userId)
+        if(!user) {
+            return handleClientError(res, 404, 'User not found')
+        }
+
+        await user.destroy()
+
+        res.status(200).json({ message: 'Successfully delete data!'})
+    } catch (error) {
+        return handleServerError(res)
+    }
+}
+
 exports.addProductToCart = async (req, res) => {
     try {
-        const { userId, productId, quantity } = req.body;
+        const { id: userId, productId } = req.params;
+        const { quantity } = req.body;
 
         const user = await User.findByPk(userId);
         const product = await Product.findByPk(productId);
+
+        const schema = Joi.object({
+            quantity: Joi.number().required()
+        });
+
+        const { error } = schema.validate({ quantity });
+        if (error) {
+            return res.status(400).json({ status: 'Validation Failed', message: error.details[0].message });
+        }
 
         if (!user || !product) {
             return handleClientError(res, 404, 'User or product not found')
@@ -72,7 +129,8 @@ exports.addProductToCart = async (req, res) => {
             where: {
                 userId: userId,
                 productId: productId
-            }
+            },
+            attributes: { exclude: ['updatedAt', 'createdAt'] }
         })
 
         if (cartItem){
@@ -82,8 +140,9 @@ exports.addProductToCart = async (req, res) => {
             cartItem = await Cart.create({
                 userId: userId,
                 productId: productId,
-                quantity: parseInt(quantity),
                 productName: product.title,
+                quantity: parseInt(quantity),
+                price: (product.price * quantity),
             });
         }
 
@@ -92,3 +151,33 @@ exports.addProductToCart = async (req, res) => {
      return handleServerError(res);
     }
 }
+
+exports.deleteProductFromCart = async (req, res) => {
+    try {
+        const { id: userId, productId } = req.params;
+
+        const user = await User.findByPk(userId);
+        const product = await Product.findByPk(productId);
+
+        if (!user || !product) {
+            return handleClientError(res, 404, 'User or product not found');
+        }
+
+        const cartItem = await Cart.findOne({
+            where: {
+                userId: userId,
+                productId: productId
+            }
+        });
+
+        if (!cartItem) {
+            return handleClientError(res, 404, 'Product not found in cart');
+        }
+
+        await cartItem.destroy()
+
+        res.status(200).json({ message: 'Product removed from cart successfully' });
+    } catch (error) {
+        return handleServerError(res);
+    }
+};

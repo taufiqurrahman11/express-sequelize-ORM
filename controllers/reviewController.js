@@ -1,21 +1,35 @@
 const { handleServerError, handleClientError } = require('../helpers/handleError')
 const { Review, Product } = require('../models')
+const Joi = require('joi');
 
 exports.createReview = async (req, res) => {
     try {
-        const { productId, ...otherReviewData } = req.body;
+        const { productId } = req.params;
+        const { rating, content } = req.body;
 
-        const product = await Product.findOne({where: {id: productId}})
-        if(!product){
-            return handleClientError(res, 404, 'Product not found')
+        const reviewSchema = Joi.object({
+            rating: Joi.number().required(),
+            content: Joi.string().required()
+        });
+        const { error } = reviewSchema.validate(req.body);
+        if (error) {
+            return res.status(400).json({ status: 'Validation Failed', message: error.details[0].message });
         }
 
-        await Review.create({
-            productId,
-            ...otherReviewData
+        const productIdNumber = parseInt(productId, 10);
+
+        const product = await Product.findByPk(productId);
+        if (!product) {
+            return handleClientError(res, 404, 'Product not found');
+        }
+
+        const newReview = await Review.create({
+            productId: productIdNumber,
+            rating,
+            content
         });
 
-        res.status(201).json({ message: 'Success create review' })      
+        res.status(201).json({ data: newReview, message: 'Success create review' })      
     } catch (error) {
         return handleServerError(res)
     }

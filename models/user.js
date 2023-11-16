@@ -22,7 +22,6 @@ module.exports = (sequelize, DataTypes) => {
   User.init({
     name: DataTypes.STRING,
     email: DataTypes.STRING,
-    cartId: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'User',

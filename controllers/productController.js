@@ -6,9 +6,15 @@ const Joi = require('joi');
 exports.getAllProducts = async (req, res) => {
     try {
         const response = await Product.findAll({
-            include: 'productReview',
+            include: {
+                model: Review,
+                as: 'productReview',
+                attributes: {
+                    exclude: ['createdAt', 'updatedAt']
+                }
+            },
             attributes: {
-                exclude: ['createdAt', 'updatedAt']
+                exclude: ['updatedAt', 'createdAt']
             }
         })
 
