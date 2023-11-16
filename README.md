@@ -8,7 +8,7 @@ Express API with basic routes:
 
 ---
 ## ABOUT
-Berikut ini merupakan API sistem e-commerce terdiri dari tabel user, product, review, dan cart. Tabel product dan review memiliki hubungan one-to-many, artinya setiap product dapat memiliki banyak review. Tabel user, product, dan cart memiliki hubungan many-to-many, artinya setiap user dapat memiliki banyak product, dan setiap product dapat dimiliki oleh banyak user. Tabel cart berfungsi sebagai penghubung antara tabel user dan product.
+Berikut ini merupakan API sistem e commerce terdiri dari tabel user, product, review, dan cart. Tabel product dan review memiliki hubungan one-to-many, artinya setiap product dapat memiliki banyak review. Tabel user, product, dan cart memiliki hubungan many-to-many, artinya setiap user dapat memiliki banyak product, dan setiap product dapat dimiliki oleh banyak user. Tabel cart berfungsi sebagai penghubung antara tabel user dan product.
 ## URL
 SERVER
 ```
